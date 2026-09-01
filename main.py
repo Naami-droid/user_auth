@@ -22,3 +22,5 @@ security = HTTPBearer()
 class AuthCredentials(BaseModel):
     email: str
     password: str
+
+import auth
