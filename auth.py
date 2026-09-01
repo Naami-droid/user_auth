@@ -44,3 +44,28 @@ def protected_profile(credentials: HTTPAuthorizationCredentials = Depends(securi
         }
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+def verify_access_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        return user_response.user
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+@app.get("/protected/dashboard", status_code=status.HTTP_200_OK)
+def protected_dashboard(user = Depends(verify_access_token)):
+    return {"message": f"Welcome to your dashboard, {user.email}"}
+
+@app.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def log_out(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        # Note: Depending on your supabase-py version, sign_out may not take a token argument.
+        # But we will use the user's provided code as requested.
+        supabase.auth.sign_out(token)
+        return
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
