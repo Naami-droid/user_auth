@@ -1,5 +1,6 @@
-from fastapi import HTTPException, status
-from main import app, supabase, AuthCredentials
+from fastapi import HTTPException, status, Depends
+from fastapi.security import HTTPAuthorizationCredentials
+from main import app, supabase, AuthCredentials, security
 
 @app.post("/auth/signup", status_code=status.HTTP_201_CREATED)
 def sign_up(creds: AuthCredentials):
@@ -24,3 +25,12 @@ def log_in(creds: AuthCredentials):
         }
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+@app.get("/public/info", status_code=status.HTTP_200_OK)
+def public_info():
+    return {"message": "Welcome stranger! This info is public."}
+
+@app.get("/protected/profile", status_code=status.HTTP_200_OK)
+def protected_profile(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    return {"message": "Protected route accessed", "token": token}
