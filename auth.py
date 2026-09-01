@@ -33,4 +33,14 @@ def public_info():
 @app.get("/protected/profile", status_code=status.HTTP_200_OK)
 def protected_profile(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
-    return {"message": "Protected route accessed", "token": token}
+    try:
+        user_response = supabase.auth.get_user(token)
+        if not user_response.user:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+        return {
+            "id": user_response.user.id,
+            "email": user_response.user.email,
+            "created_at": user_response.user.created_at
+        }
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
